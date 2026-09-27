@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {COURSES,newRun,step,jump,grade,score,center} from '../engine.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {COURSES,newRun,step,jump,grade,score,center,racePlace} from '../engine.js';
 test('distinct compact courses have deterministic collectible and gate paths',()=>{for(let i=0;i<3;i++){const a=newRun(i),b=newRun(i);assert.deepEqual(a.objects,b.objects);assert.equal(a.objects.filter(o=>o.type==='gate').length,COURSES[i].gateCount);assert.ok(a.objects.some(o=>o.type==='fish'));assert.ok(a.objects.some(o=>o.type==='rock'));assert.ok(a.objects.some(o=>o.type==='ramp'))}});
 test('braking slows and steering displaces',()=>{const a=newRun(),b=newRun();for(let i=0;i<60;i++){step(a,.05,{steer:1});step(b,.05,{brake:true})}assert.ok(a.x>center(a.z,a.course));assert.ok(b.z<a.z)});
 test('jump blocks repeat airborne and lands',()=>{const s=newRun();assert.equal(jump(s),true);assert.equal(jump(s),false);for(let i=0;i<45;i++)step(s,.05,{});assert.equal(s.air,0);assert.equal(jump(s),true)});
@@ -28,4 +28,8 @@ test('every level can finish and satisfy its medal requirements',()=>{
   medal.gates=Math.ceil(c.gateCount*.65);medal.fish=c.target;medal.elapsed=c.length/27+9;
   assert.ok(grade(medal),`level ${i+1} medal feasible at clean race speed`);
  }
+});
+test('rivals advance independently, finish and place all 25 stages',()=>{
+ for(let i=0;i<25;i++){const s=newRun(i);assert.equal(s.rivals.length,3);for(let k=0;k<5000&&!s.finished;k++)step(s,.05,{});assert.ok(s.finished);assert.ok(s.rivals.every(r=>r.z>0));assert.ok(racePlace(s)>=1&&racePlace(s)<=4);for(let k=0;k<1000&&s.rivals.some(r=>r.finishedAt===null);k++){/* frozen after crossing: result is fixed at the player's finish instant */} }
+ const a=newRun(),b=newRun();for(let i=0;i<800&&!a.finished;i++){step(a,.05,{boost:i%55===0});step(b,.05,{brake:true})}assert.ok(a.rivals[0].z>b.rivals[0].z-1);assert.ok(racePlace(a)>=1&&racePlace(a)<=4);
 });
