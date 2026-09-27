@@ -6,3 +6,26 @@ test('fish gate collision and rock penalties register once',()=>{const s=newRun(
 test('campaign completion and score requirements',()=>{const s=newRun();s.z=s.course.length-.2;s.gates=5;s.fish=5;s.elapsed=40;step(s,.05,{});assert.equal(s.finished,true);assert.equal(grade(s),true);assert.ok(score(s)>0);s.hits=4;assert.equal(grade(s),false)});
 test('boost consumes charge and stamina, increases speed, and respects cooldown',()=>{const s=newRun();step(s,.05,{boost:true});assert.equal(s.boostCharges,1);assert.ok(s.stamina<100);const charge=s.boostCharges;step(s,.05,{boost:true});assert.equal(s.boostCharges,charge);const baseline=newRun();for(let i=0;i<10;i++){step(s,.05,{});step(baseline,.05,{})}assert.ok(s.speed>baseline.speed);});
 test('boost pickup restores a charge, fish replenishes stamina',()=>{const s=newRun();s.boostCharges=0;s.stamina=40;for(const type of ['boost','fish']){const o=s.objects.find(x=>x.type===type);s.z=o.z-.1;s.x=o.x;s.speed=20;step(s,.05,{})}assert.equal(s.boostCharges,1);assert.ok(s.stamina>40)});
+
+test('25 unique stages strictly increase in distance, gates, and curve pressure',()=>{
+ assert.equal(COURSES.length,25);
+ assert.equal(new Set(COURSES.map(c=>c.name)).size,25);
+ for(let i=1;i<25;i++){
+  assert.ok(COURSES[i].length>COURSES[i-1].length);
+  assert.ok(COURSES[i].gateCount>COURSES[i-1].gateCount);
+  assert.ok(COURSES[i].target>=COURSES[i-1].target);
+  assert.ok(COURSES[i].difficulty>COURSES[i-1].difficulty);
+  assert.ok(COURSES[i].time/COURSES[i].length<COURSES[i-1].time/COURSES[i-1].length);
+ }
+});
+test('every level can finish and satisfy its medal requirements',()=>{
+ for(let i=0;i<25;i++){
+  const s=newRun(i);let ticks=0;
+  while(!s.finished&&ticks++<6000)step(s,.05,{});
+  assert.ok(s.finished,`level ${i+1} finishes`);
+  assert.ok(s.elapsed<200,`level ${i+1} bounded duration`);
+  const c=COURSES[i],medal=newRun(i);
+  medal.gates=Math.ceil(c.gateCount*.65);medal.fish=c.target;medal.elapsed=c.length/27+9;
+  assert.ok(grade(medal),`level ${i+1} medal feasible at clean race speed`);
+ }
+});

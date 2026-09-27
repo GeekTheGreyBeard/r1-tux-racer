@@ -1,41 +1,29 @@
 # Snowline Sprint
 
-An original, self-contained, portrait-first downhill arcade game inspired by the visual character and mechanics of [Tux Racer · Alpine](https://tux-racer-alpine-reborn.geekthegreybeard.chatgpt.site/) designed for a 240 × 282 Rabbit R1 browser viewport. No build or network dependency. Run `python3 -m http.server 8000` in this directory and open `http://localhost:8000/`. The public release and installation QR are linked below.
-
-## Actual 240 × 282 browser screenshots
-
-Captured from the running game in headless Chromium, not concept art. The results capture fast-forwards to the finish; it is not evidence of a successful human run.
-
-| Menu | Gameplay | Results |
-|---|---|---|
-| ![Menu at 240 by 282](screenshot-menu.png) | ![Gameplay at 240 by 282](screenshot-gameplay.png) | ![Result at 240 by 282](screenshot-results.png) |
+An original, offline-capable portrait downhill arcade game for the Rabbit R1's 240 × 282 browser. The chase view draws Tux belly-down, sliding away from the camera toward the slope; no third-party game assets are bundled. Inspired by the visual character and mechanics of [Tux Racer · Alpine](https://tux-racer-alpine-reborn.geekthegreybeard.chatgpt.site/), not an official Tux Racer product.
 
 ## Play and install
 
-[Play the published release](https://geekthegreybeard.github.io/r1-tux-racer/?release=20260927-snowline). On R1, open **Creations card → Create tab → Add via QR code** and scan this release-specific QR. The QR encodes the JSON Creation card below, not merely a bare website URL. Physical R1 installation has not been verified.
+[Play the 25-level release](https://geekthegreybeard.github.io/r1-tux-racer/?release=20260927-25-levels). On R1, open **Creations card → Create tab → Add via QR code** and scan the release-specific Creation card QR below. Physical R1 installation is unverified.
 
-![Snowline Sprint R1 install QR](snowline-sprint-r1-install-qr.png)
+![Snowline Sprint R1 installation QR](snowline-sprint-r1-install-qr.png)
 
-## Mechanics and campaign
+## Actual 240 × 282 browser screenshots
 
-Three sequentially unlocked courses—Pinewake, Glasswind, Emberfall—have progressively longer, more winding slopes and more gates. Follow the curved snow track; pass through offset slalom gates, pick up fish, jump or dodge rocks, and ride short ramps. The edge slows the penguin. A sampled chase-camera snow ribbon, layered mountain walls, offset pine groves, depth-scaled pickups, and a round flippered penguin bring the reference’s alpine valley and rider silhouette into the small display. Two starting boost charges can be spent on straights; green lightning pickups replenish up to three charges. Boost costs 20 stamina, lasts 0.9 seconds and has a 2.5-second cooldown. Fish restore 12 stamina, rocks cost 18, and stamina slowly recovers. A medal and next-course unlock require target fish, at least 65% of gates, a finish under par, and fewer than four hits. All finishes show fish, gates, hits, time, score and medal state. Score = 160 per gate + 85 per fish + 12 per second under par − 100 per hit − 45 per missed gate. Replay via Race Again; use Course Menu from pause/results to select an unlocked course. Pause/resume in a run. Unlocks persist locally if browser storage permits.
+| Menu | Level 1 race | Level 25 race | Result |
+|---|---|---|---|
+| ![Menu](screenshot-menu.png) | ![Pinewake](screenshot-gameplay.png) | ![Alpine Finale](screenshot-level25-gameplay.png) | ![Results](screenshot-results.png) |
 
-## Controls
+The level-25 screenshot uses a test-only unlocked browser storage state. Results are fast-forwarded to exercise the screen; these screenshots do not establish a human-played clear.
 
-Tilt left/right to steer. Tilt zero is calibrated to the first sensor reading after starting a race; start another run to recalibrate. Stale motion readings expire after one second. The large left/right touch buttons always work and override tilt while held, including on devices without sensors. Hold BRAKE to slow to 9 m/s; tap JUMP to clear rocks; tap ⚡ to boost. Keyboard: left/right or A/D, down or S to brake, Space to jump, Up or W to boost, Escape to pause. Audio consists of short synthesized cues and starts only after user interaction.
+## Campaign and controls
 
-## Reference comparison and remaining compromises
+There are **exactly 25 named, sequentially unlocked levels**, Pinewake through Alpine Finale. Every next level is 90 metres longer and has one more gate; fish targets rise, slopes bend more, the track narrows, gate offsets widen and par time per metre decreases. The five-page level picker shows five stages at a time, with locked stages disabled. The final descent measures 3,060 metres, with 31 gates and a 20-fish target. A medal unlocks the next level: collect target fish, clear at least 65% of gates, finish within par and take fewer than four hits. Unlocks persist in local storage where available. The final medal completes the campaign without inventing another stage.
 
-The supplied live PC reference was inspected in menu and race views, and its local project examined. Its broad open downhill valley, modeled flippered penguin, pine-lined mountains, fish, obstacles, ramps, stamina and boost charge are now recognizable here through original procedural 2D drawing and compact mechanics. Unlike the first R1 release’s flat vertical strip and tiny penguin, the updated screenshot shows a receding chase-camera course and a larger rider. The PC version additionally has six expansive 3D mountains, day/night selection, caves and underwater forks, bobsled routes, shields, health, difficulty settings, CPU/split/online opponents, leaderboard, and a richer audio/lighting system. Those are **not** claimed here: this version has three fixed compact courses, dusk on the final course, solo local progression, small synthesized cues and no borrowed PC assets. On-device R1 sensor mapping, audio and sustained frame rate remain untested.
+Tilt left/right to steer, calibrated at each race start; touch arrows override tilt when held and work if sensors are unavailable. Hold BRAKE to carve, tap JUMP to clear rocks, and tap ⚡ to spend a boost charge. Keyboard: arrows or A/D, S/down to brake, Space to jump, W/up to boost, Escape to pause. Fish restore stamina; rocks slow Tux and drain stamina; green pickups replenish boost charges. The edge slows Tux. Short synthesized audio cues start after interaction.
 
-## Limits
+## Test and implementation notes
 
-At 240 × 282, the touch controls overlay the bottom of the course; this is a CPU-friendly 2D canvas chase projection, not the reference’s WebGL 3D terrain. Orientation permission depends on browser policy; touch remains available. Browser localStorage can be disabled, in which case course unlocks last only for the session. Actual R1 sensor orientation, touch ergonomics and frame rate require on-device acceptance testing. This is a single-player offline game, not network racing.
+Run `npm test` and `npm run test:browser` after `npm install` and `npx playwright install chromium`. Node tests check deterministic layouts, mechanics, all 25 distinct stage specifications, monotonically increasing distance and gate counts, finishability and medal feasibility under a clean-race benchmark. Browser tests exercise 240 × 282 rendering, touch steering, jumping, boosting, pause/resume, results, a qualifying unlock persisted across reload and level-25 selection/start; they write the screenshots above and `screenshot-level25-menu.png`. The browser results fast-forward is **not** a manual balance clear. On-device R1 sensor mapping, touch ergonomics, installation, audio and sustained frame rate remain unverified.
 
-## Tests
-
-Run `npm test` (Node 18+). Tests cover procedural layouts, steering/braking, jump cooldown, boost consumption/cooldown and pickups, collision single-counting, finish and medal logic. Run `npm run test:browser` after `npm install` and `npx playwright install chromium`. Headless Chromium was tested at exactly 240 × 282: menu, start, touch steering, jump, boost, pause/resume, finish/results, and zero page errors. The test writes `screenshot-menu.png`, `screenshot-gameplay.png`, and `screenshot-results.png` in this directory. The result finish is fast-forwarded to exercise the screen; this does not establish human-play balance or R1 hardware compatibility.
-
-## Credits
-
-Original implementation and procedural geometry, scenery, character rendering, UI and Web Audio cues created for this project. The supplied live Alpine Reborn site and local PC source were inspected for high-level mechanics and visual direction; no artwork, source code, media or music was copied. Inspired by the downhill penguin arcade genre, not an official Tux Racer product. No third-party assets.
+This is a compact 2D single-player canvas game, not the PC reference's expansive 3D terrain or multiplayer. The terrain, character, scenery and sound are procedural and original; no PC artwork, code or media was copied. Host the directory with `python3 -m http.server 8000` and open `http://localhost:8000/` for local play. Browser storage may be disabled, in which case unlocks last only for the current session.

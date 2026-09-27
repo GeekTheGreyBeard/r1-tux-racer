@@ -1,16 +1,32 @@
 import {renderScene} from './renderer.js';
 import {COURSES,center,width,newRun,step,jump,grade,score,clamp} from './engine.js';
 const $=id=>document.getElementById(id),canvas=$('scene'),ctx=canvas.getContext('2d');
-let boostQueued=false;let state='menu',selected=0,unlocked=0,run=null,last=0,tilt=0,tiltBase=null,tiltLive=false,tiltAt=0,noticeUntil=0,keys=new Set(),touch={left:false,right:false,brake:false},audio=null;
-try{unlocked=clamp(Number(localStorage.getItem('snowline-unlocked'))||0,0,2)}catch{}
+let pickerPage=0;let boostQueued=false;let state='menu',selected=0,unlocked=0,run=null,last=0,tilt=0,tiltBase=null,tiltLive=false,tiltAt=0,noticeUntil=0,keys=new Set(),touch={left:false,right:false,brake:false},audio=null;
+try{unlocked=clamp(Number(localStorage.getItem('snowline-unlocked'))||0,0,COURSES.length-1)}catch{}
 function sound(type){try{audio ||= new (window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;o.type=type==='hit'?'sawtooth':'sine';o.frequency.setValueAtTime(type==='fish'?580:type==='hit'?130:380,t);o.frequency.exponentialRampToValueAtTime(type==='fish'?900:type==='hit'?75:510,t+.13);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.085,t+.014);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g).connect(audio.destination);o.start(t);o.stop(t+.17)}catch{}}
 function announce(s){$('notice').textContent=s;noticeUntil=performance.now()+1100}
-function picker(){const root=$('picker');root.replaceChildren();COURSES.forEach((c,i)=>{const b=document.createElement('button');b.textContent=`${String(i+1).padStart(2,'0')} ${c.name}`;b.disabled=i>unlocked;b.className=i===selected?'active':'';b.onclick=()=>{selected=i;picker();$('description').textContent=`${c.subtitle}. ${c.gateCount} gates · ${c.target} fish · ${c.time}s par.`};root.append(b)})}
-function menu(mode='menu'){state=mode;$('panel').hidden=false;$('controls').hidden=true;$('hud').hidden=true;$('pause').hidden=true;$('panel').querySelector('h1').innerHTML='SNOWLINE<br><em>SPRINT</em>';$('description').textContent='Three alpine descents. Thread the gates, gather fish, and outrun the clock.';$('primary').innerHTML='START DESCENT <span>↗</span>';$('menuButton').hidden=true;picker()}
+function picker(){
+ const root=$('picker');root.replaceChildren();
+ const pages=Math.ceil(COURSES.length/5);pickerPage=clamp(pickerPage,0,pages-1);
+ const nav=document.createElement('div');nav.className='picker-nav';
+ const prev=document.createElement('button');prev.textContent='◀';prev.disabled=pickerPage===0;prev.onclick=()=>{pickerPage--;picker()};
+ const label=document.createElement('span');label.textContent=`LEVELS ${pickerPage*5+1}–${Math.min(COURSES.length,(pickerPage+1)*5)} / ${COURSES.length}`;
+ const next=document.createElement('button');next.textContent='▶';next.disabled=pickerPage===pages-1;next.onclick=()=>{pickerPage++;picker()};
+ nav.append(prev,label,next);root.append(nav);
+ const list=document.createElement('div');list.className='picker-list';
+ COURSES.slice(pickerPage*5,pickerPage*5+5).forEach((c,j)=>{
+  const i=pickerPage*5+j,b=document.createElement('button');
+  b.textContent=`${String(i+1).padStart(2,'0')} ${c.name}${i>unlocked?' · LOCKED':''}`;
+  b.disabled=i>unlocked;b.className=i===selected?'active':'';
+  b.onclick=()=>{selected=i;picker();describeCourse()};list.append(b)
+ });root.append(list)
+}
+function describeCourse(){const c=COURSES[selected];$('description').textContent=`${c.subtitle}. ${c.length}m · ${c.gateCount} gates · ${c.target} fish · ${c.time}s par.`}
+function menu(mode='menu'){state=mode;$('panel').hidden=false;$('controls').hidden=true;$('hud').hidden=true;$('pause').hidden=true;$('panel').querySelector('h1').innerHTML='SNOWLINE<br><em>SPRINT</em>';$('primary').innerHTML='START DESCENT <span>↗</span>';$('menuButton').hidden=true;pickerPage=Math.floor(selected/5);picker();describeCourse()}
 function start(){run=newRun(selected);tiltBase=null;tiltLive=false;state='racing';$('panel').hidden=true;$('controls').hidden=false;$('hud').hidden=false;$('pause').hidden=false;last=performance.now();announce(COURSES[selected].name.toUpperCase());audio?.resume();requestTilt()}
 function requestTilt(){if(typeof DeviceOrientationEvent==='undefined')return;if(typeof DeviceOrientationEvent.requestPermission==='function'){DeviceOrientationEvent.requestPermission().catch(()=>{});} }
 window.addEventListener('deviceorientation',e=>{if(typeof e.gamma!=='number')return;if(tiltBase===null)tiltBase=e.gamma;tilt=clamp((e.gamma-tiltBase)/24,-1,1);tiltLive=true;tiltAt=performance.now()});
-function finish(){state='results';$('hud').hidden=true;$('controls').hidden=true;$('pause').hidden=true;$('panel').hidden=false;const win=grade(run);if(win&&selected===unlocked&&unlocked<2){unlocked++;try{localStorage.setItem('snowline-unlocked',String(unlocked))}catch{}}picker();$('panel').querySelector('h1').innerHTML=win?'SUMMIT<br><em>CLEARED</em>':'RUN<br><em>COMPLETE</em>';$('description').textContent=`${COURSES[selected].name} · ${Math.ceil(run.elapsed)}s · ${run.fish} fish · ${run.gates}/${run.course.gateCount} gates · ${run.hits} hits. Score ${score(run)}. ${win?'Next course unlocked.':'Medal: collect target fish, clear 65% of gates, beat par, and take fewer than four hits.'}`;$('primary').innerHTML='RACE AGAIN <span>↗</span>';$('menuButton').hidden=false;sound(win?'fish':'hit')}
+function finish(){state='results';$('hud').hidden=true;$('controls').hidden=true;$('pause').hidden=true;$('panel').hidden=false;const win=grade(run);if(win&&selected===unlocked&&unlocked<COURSES.length-1){unlocked++;pickerPage=Math.floor(unlocked/5);try{localStorage.setItem('snowline-unlocked',String(unlocked))}catch{}}picker();$('panel').querySelector('h1').innerHTML=win?'SUMMIT<br><em>CLEARED</em>':'RUN<br><em>COMPLETE</em>';$('description').textContent=`${COURSES[selected].name} · ${Math.ceil(run.elapsed)}s · ${run.fish} fish · ${run.gates}/${run.course.gateCount} gates · ${run.hits} hits. Score ${score(run)}. ${win?(selected<COURSES.length-1?'Next level unlocked.':'All 25 levels cleared!'):'Medal: collect target fish, clear 65% of gates, beat par, and take fewer than four hits.'}`;$('primary').innerHTML='RACE AGAIN <span>↗</span>';$('menuButton').hidden=false;sound(win?'fish':'hit')}
 $('menuButton').onclick=()=>menu();$('primary').onclick=()=>{if(state==='paused'){state='racing';$('panel').hidden=true;last=performance.now();return}start()};$('pause').onclick=()=>{if(state!=='racing')return;state='paused';$('panel').hidden=false;$('panel').querySelector('h1').innerHTML='TAKE A<br><em>BREATH</em>';$('description').textContent='The mountain waits. Tilt to steer, or use the arrows. Hold brake on tight turns.';$('primary').innerHTML='RESUME <span>↗</span>';$('menuButton').hidden=false};
 for(const id of ['left','right','brake']){const b=$(id);b.onpointerdown=e=>{e.preventDefault();b.setPointerCapture(e.pointerId);touch[id]=true};b.onpointerup=b.onpointercancel=()=>touch[id]=false}
 $('boost').onpointerdown=e=>{e.preventDefault();if(state==='racing')boostQueued=true};
@@ -23,5 +39,5 @@ function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;if(state==='rac
  step(run,dt,{steer:steer||((tiltLive&&t-tiltAt<1000&&Math.abs(tilt)>.08)?tilt:0),brake:touch.brake||keys.has('ArrowDown')||keys.has('KeyS'),boost:boostQueued});boostQueued=false;
  for(const e of run.events){if(e==='fish'||e==='gate'||e==='hit'||e==='ramp'){announce({fish:'FISH +85',gate:'CLEAN GATE +160',hit:'ROCK! SLOW DOWN',ramp:'AIRBORNE',boost:'BOOST!',charge:'BOOST +1'}[e]);sound(e)}}if(run.finished)finish();}
  if(t>noticeUntil)$('notice').textContent='';render();requestAnimationFrame(frame)}
-picker();requestAnimationFrame(frame);
+picker();describeCourse();requestAnimationFrame(frame);
 window.__snowline={get state(){return state},get run(){return run},get unlocked(){return unlocked},start,step:(dt,input)=>{if(state==='racing'){step(run,dt,input);if(run.finished)finish()}},jump:()=>jump(run)};

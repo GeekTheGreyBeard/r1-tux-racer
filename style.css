@@ -2,3 +2,5 @@
 .secondary{margin-top:5px;padding:6px;color:#cce6e4;border:1px solid #83b2b9;border-radius:6px;background:#15354a;font-size:9px;font-weight:850}
 
 .stamina{height:3px;background:#17394aaf;border-radius:4px;margin-top:3px;width:75px}.stamina div{height:100%;background:#adf66e;border-radius:4px;width:100%}#boostHud{font-size:8px;color:#bdfc76;margin-top:2px}.controls #boost{background:#b9fb6be0;color:#102b35;min-width:30px}.controls #left,.controls #right{min-width:31px}.controls #brake{min-width:47px}.controls #jump{min-width:41px}.panel{background:linear-gradient(180deg,#0a2032b0,#092338eb 54%,#081a2af8)}
+
+.course-picker{display:block;margin:0 0 7px}.picker-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;font-size:8px;font-weight:850;letter-spacing:.08em}.picker-nav button{flex:none;width:28px;padding:3px}.picker-list{display:grid;grid-template-columns:1fr 1fr;gap:3px}.picker-list button{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:4px;font-size:8px}.panel{padding-top:16px}.panel h1{font-size:27px;margin:7px 0 5px}.panel p{margin-bottom:6px}

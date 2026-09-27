@@ -1,19 +1,37 @@
-export const COURSES = [
-  {name:'Pinewake',subtitle:'A gentle blue-hour descent',length:900,gateCount:7,target:5,time:72,seed:11,theme:'pine'},
-  {name:'Glasswind',subtitle:'The ridge turns sharp',length:1120,gateCount:9,target:7,time:83,seed:37,theme:'ice'},
-  {name:'Emberfall',subtitle:'The mountain after sunset',length:1360,gateCount:11,target:9,time:98,seed:71,theme:'dusk'}
+const NAMES = [
+  'Pinewake','Glasswind','Emberfall','Frostline','Silver Run',
+  'Blue Divide','Needle Pass','Mooncrust','Rime Hollow','Northwind',
+  'Icefall','Wolf Ridge','Cloudbreak','Cold Summit','Aurora Bend',
+  'Whiteout','Cinder Snow','Echo Chute','Sky Needle','Glacier Gate',
+  'Storm Crown','Black Ice','Last Light','High Traverse','Alpine Finale'
 ];
+const SUBTITLES = ['A gentle blue-hour descent','The ridge turns sharp','The mountain after sunset',
+  'Narrow snow between the pines','A quicker silver corridor'];
+export const COURSES = Object.freeze(NAMES.map((name,i)=>Object.freeze({
+  name,subtitle:SUBTITLES[i]||`Stage ${i+1} · ${['pine forest','glacial ridge','sunset slope','high pass','storm crest'][i%5]}`,
+  length:900+90*i,gateCount:7+i,target:5+Math.floor(i*.65),
+  // Par falls from roughly 12.5 to 5 seconds beyond a clean 27 m/s descent.
+  time:Math.ceil((900+90*i)/27+39-i*.35),seed:11+i*29,
+  theme:['pine','ice','dusk','pine','ice'][i%5],difficulty:i
+})));
 export const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
-export const center=(z,c)=>Math.sin(z*.006+c.seed)*.18+Math.sin(z*.018+c.seed*.19)*.09;
-export const width=(z,c)=>.83-.09*Math.sin(z*.004+c.seed);
+export const center=(z,c)=>{
+  const d=c.difficulty||0;
+  return Math.sin(z*(.006+d*.00009)+c.seed)*(.18+d*.0028)
+    +Math.sin(z*(.018+d*.00015)+c.seed*.19)*(.09+d*.0014);
+};
+export const width=(z,c)=>.83-(c.difficulty||0)*.009-.09*Math.sin(z*.004+c.seed);
 export function makeObjects(c){
   const objects=[];
   for(let i=0;i<c.gateCount;i++){
-    const z=115+i*(c.length-210)/(c.gateCount-1), x=center(z,c)+(i%2 ? .27 : -.27);
+    const z=115+i*(c.length-210)/(c.gateCount-1);
+    const side=i%2?1:-1, x=center(z,c)+side*(.24+(c.difficulty||0)*.002);
     objects.push({type:'gate',z,x,id:`g${i}`});
-    if(i===2||i===c.gateCount-3)objects.push({type:'boost',z:z+12,x:center(z+12,c),id:`boost${i}`});
-    objects.push({type:'fish',z:z+27,x:center(z+27,c)+(i%2 ? -.20:.20),id:`f${i}`});
-    if(i>0)objects.push({type:i%3===0?'ramp':'rock',z:z+53,x:center(z+53,c)+(i%2 ? -.16:.16),id:`h${i}`});
+    if(i===2||i===c.gateCount-3||((c.difficulty||0)>12&&i===Math.floor(c.gateCount/2)))
+      objects.push({type:'boost',z:z+12,x:center(z+12,c),id:`boost${i}`});
+    objects.push({type:'fish',z:z+27,x:center(z+27,c)-side*.16,id:`f${i}`});
+    if(i>0)objects.push({type:i%3===0?'ramp':'rock',z:z+53,
+      x:center(z+53,c)-side*(.14+(c.difficulty||0)*.003),id:`h${i}`});
   }
   for(let i=0;i<4;i++) { const z=80+i*(c.length-160)/4; objects.push({type:'fish',z,x:center(z,c),id:`bonus${i}`}); }
   return objects.sort((a,b)=>a.z-b.z);
