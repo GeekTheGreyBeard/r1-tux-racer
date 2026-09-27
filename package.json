@@ -1,0 +1,12 @@
+{
+  "name": "snowline-sprint",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:browser": "node tests/browser.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}
