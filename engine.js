@@ -11,6 +11,7 @@ export function makeObjects(c){
   for(let i=0;i<c.gateCount;i++){
     const z=115+i*(c.length-210)/(c.gateCount-1), x=center(z,c)+(i%2 ? .27 : -.27);
     objects.push({type:'gate',z,x,id:`g${i}`});
+    if(i===2||i===c.gateCount-3)objects.push({type:'boost',z:z+12,x:center(z+12,c),id:`boost${i}`});
     objects.push({type:'fish',z:z+27,x:center(z+27,c)+(i%2 ? -.20:.20),id:`f${i}`});
     if(i>0)objects.push({type:i%3===0?'ramp':'rock',z:z+53,x:center(z+53,c)+(i%2 ? -.16:.16),id:`h${i}`});
   }
@@ -19,7 +20,7 @@ export function makeObjects(c){
 }
 export function newRun(courseIndex=0){
   const c=COURSES[courseIndex];if(!c)throw Error('Unknown course');
-  return {courseIndex,course:c,objects:makeObjects(c),seen:new Set(),x:center(0,c),z:0,speed:14,elapsed:0,fish:0,gates:0,missed:0,hits:0,jumps:0,air:0,vy:0,stun:0,invuln:0,brake:false,steer:0,finished:false,events:[]};
+  return {courseIndex,course:c,objects:makeObjects(c),seen:new Set(),x:center(0,c),z:0,speed:14,elapsed:0,fish:0,gates:0,missed:0,hits:0,jumps:0,air:0,vy:0,stun:0,invuln:0,stamina:100,boost:0,boostCharges:2,boostCooldown:0,brake:false,steer:0,finished:false,events:[]};
 }
 export function jump(s){if(s.finished||s.air>0||s.stun>0)return false;s.vy=3.5;s.air=.01;s.jumps++;s.events.push('jump');return true;}
 export function grade(s){return s.fish>=s.course.target && s.gates>=Math.ceil(s.course.gateCount*.65) && s.elapsed<=s.course.time && s.hits<4;}
@@ -27,8 +28,8 @@ export function score(s){return Math.max(0,Math.round(s.gates*160+s.fish*85+Math
 export function step(s,dt,input={}){
   if(s.finished)return s;
   dt=clamp(dt,0,.05);s.events=[];s.elapsed+=dt;s.steer=clamp(input.steer||0,-1,1);s.brake=!!input.brake;
-  s.stun=Math.max(0,s.stun-dt);s.invuln=Math.max(0,s.invuln-dt);
-  const target=s.brake?9:27+Math.min(5,s.z/300);s.speed+=(target-s.speed)*Math.min(1,dt*(s.stun?1.5:.65));
+  s.boostCooldown=Math.max(0,s.boostCooldown-dt);if(input.boost&&s.boostCharges>0&&s.boostCooldown===0&&s.stamina>=20){s.boostCharges--;s.stamina-=20;s.boost=.9;s.boostCooldown=2.5;s.events.push('boost');}s.boost=Math.max(0,s.boost-dt);s.stamina=clamp(s.stamina+(s.brake?4:1.5)*dt,0,100);s.stun=Math.max(0,s.stun-dt);s.invuln=Math.max(0,s.invuln-dt);
+  const target=s.brake?9:s.boost>0?44:27+Math.min(5,s.z/300);s.speed+=(target-s.speed)*Math.min(1,dt*(s.stun?1.5:.65));
   const old=s.z;s.z=Math.min(s.course.length,s.z+s.speed*dt);
   s.x+=s.steer*(s.stun?.12:.66)*dt;const edge=width(s.z,s.course)*.5;
   if(Math.abs(s.x-center(s.z,s.course))>edge){s.speed=Math.min(s.speed,15);s.x=clamp(s.x,center(s.z,s.course)-edge-.1,center(s.z,s.course)+edge+.1);}
@@ -36,9 +37,10 @@ export function step(s,dt,input={}){
   for(const o of s.objects){if(o.z<=old||o.z>s.z||s.seen.has(o.id))continue;s.seen.add(o.id);
     const dx=Math.abs(s.x-o.x);
     if(o.type==='gate'){if(dx<.19){s.gates++;s.events.push('gate');}else{s.missed++;s.events.push('miss');}}
-    if(o.type==='fish'&&dx<.16){s.fish++;s.events.push('fish');}
+    if(o.type==='fish'&&dx<.16){s.fish++;s.stamina=clamp(s.stamina+12,0,100);s.events.push('fish');}
+    if(o.type==='boost'&&dx<.16){s.boostCharges=Math.min(3,s.boostCharges+1);s.events.push('charge');}
     if(o.type==='ramp'&&dx<.16&&s.air===0){s.vy=4.5;s.air=.01;s.jumps++;s.events.push('ramp');}
-    if(o.type==='rock'&&dx<.16&&s.air<.13&&s.invuln<=0){s.hits++;s.stun=.8;s.invuln=1.3;s.speed*=.46;s.events.push('hit');}
+    if(o.type==='rock'&&dx<.16&&s.air<.13&&s.invuln<=0){s.hits++;s.stamina=Math.max(0,s.stamina-18);s.stun=.8;s.invuln=1.3;s.speed*=.46;s.events.push('hit');}
   }
   if(s.z>=s.course.length){s.finished=true;s.events.push('finish');}
   return s;
