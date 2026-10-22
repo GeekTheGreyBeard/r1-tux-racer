@@ -2,7 +2,7 @@
 export const TUNE = Object.freeze({
   // Physics - slope-driven acceleration model
   gravity: 9.8,
-  slopeAccelFactor: 2.5, // Strong downhill acceleration
+  slopeAccelFactor: 2.75, // Strong downhill acceleration (+10% from 2.5)
   baseFriction: 0.15, // Low friction for good glide
   dragCoeff: 0.008, // Minimal air resistance
   paddleForce: 25, // Strong paddle power
@@ -170,9 +170,9 @@ export function newRun(courseIndex=0){
     x:center(0,c),
     z:0,
     heading:Math.PI/2, // Facing downhill (rad)
-    speed:12, // Start with some initial speed
+    speed:13.2, // Start with some initial speed (+10% from 12)
     vx:0,
-    vz:12,
+    vz:13.2,
     
     // Air physics
     air:0,
