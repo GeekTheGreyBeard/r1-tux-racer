@@ -1,6 +1,8 @@
 # Snowline Sprint
 
-An original portrait downhill arcade game for the Rabbit R1's 240 × 282 browser. Tux races belly-down toward the finish against three penguin rivals on 25 progressively longer alpine courses. No third-party game assets are bundled. Inspired by [Tux Racer · Alpine](https://tux-racer-alpine-reborn.geekthegreybeard.chatgpt.site/), not an official Tux Racer product.
+An original portrait downhill arcade game for the Rabbit R1's 240 × 282 browser. Tux races belly-down toward the finish against three penguin rivals on 25 progressively longer alpine courses with Tux Racer-inspired slope-driven physics, carving, and air control.
+
+Tux the penguin by Larry Ewing (lewing@isc.tamu.edu), created with The GIMP. Inspired by Tux Racer (Sunspire Studios, 2000). Not an official Tux Racer product. No third-party game assets are bundled.
 
 ## Play and install
 
